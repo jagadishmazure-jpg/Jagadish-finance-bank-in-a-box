@@ -40,12 +40,16 @@ class EmailChannel:
                 to=to, subject=subject, sent=False, dry_run=True,
                 note="dry run: nothing sent",
             )
-        if os.environ.get("CI"):
-            raise RefusedInCI("email sending refused in CI")
         if self.transport is None:
             raise NoTransportConfigured(
                 "no email transport configured; inject one explicitly"
             )
+        # The CI refusal stays, but it must not shadow the more specific
+        # transport refusal: a test asserting "no transport" must see that
+        # error even when the runner sets CI. A real send still requires
+        # a transport AND a non-CI environment, so nothing is sent from CI.
+        if os.environ.get("CI"):
+            raise RefusedInCI("email sending refused in CI")
         self.transport(to, subject, body)
         return EmailRecord(
             to=to, subject=subject, sent=True, dry_run=False,

@@ -122,6 +122,14 @@ def test_email_refused_in_ci(monkeypatch):
     assert sent == []
 
 
+def test_email_dry_run_records_even_in_ci(monkeypatch):
+    # Regression: the runner sets CI, and a dry run must still return
+    # its record instead of raising, because it transmits nothing.
+    monkeypatch.setenv("CI", "true")
+    rec = EmailChannel().send("a@example.invalid", "Memo ready", "body")
+    assert rec.sent is False and rec.dry_run is True
+
+
 def test_email_opt_in_with_transport_sends(monkeypatch):
     monkeypatch.delenv("CI", raising=False)
     sent = []
